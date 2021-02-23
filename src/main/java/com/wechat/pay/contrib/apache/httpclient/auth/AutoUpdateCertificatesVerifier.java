@@ -48,15 +48,23 @@ public class AutoUpdateCertificatesVerifier implements Verifier {
 
   private ReentrantLock lock = new ReentrantLock();
 
+  private WechatPayHttpClientBuilder httpClientBuilder;
+
   public AutoUpdateCertificatesVerifier(Credentials credentials, byte[] apiV3Key) {
     this(credentials, apiV3Key, TimeInterval.OneHour.getMinutes());
   }
 
   public AutoUpdateCertificatesVerifier(Credentials credentials, byte[] apiV3Key,
       int minutesInterval) {
+    this(credentials, apiV3Key, TimeInterval.OneHour.getMinutes(), WechatPayHttpClientBuilder.create());
+  }
+
+  public AutoUpdateCertificatesVerifier(Credentials credentials, byte[] apiV3Key,
+      int minutesInterval, WechatPayHttpClientBuilder httpClientBuilder) {
     this.credentials = credentials;
     this.apiV3Key = apiV3Key;
     this.minutesInterval = minutesInterval;
+    this.httpClientBuilder = httpClientBuilder;
     //构造时更新证书
     try {
       autoUpdateCert();
@@ -91,8 +99,7 @@ public class AutoUpdateCertificatesVerifier implements Verifier {
   }
 
   private void autoUpdateCert() throws IOException, GeneralSecurityException {
-    CloseableHttpClient httpClient = WechatPayHttpClientBuilder.create()
-        .withCredentials(credentials)
+    CloseableHttpClient httpClient = this.httpClientBuilder.withCredentials(credentials)
         .withValidator(verifier == null ? (response) -> true : new WechatPay2Validator(verifier))
         .build();
 
